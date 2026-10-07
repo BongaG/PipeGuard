@@ -1,6 +1,6 @@
 # PipeGuard: pipeline pressure and leak detection
 
-PipeGuard is the software prototype for the paper *Enhancing IoT system for monitoring urban water availability* (Group 21, PRJT302, Durban University of Technology). It implements the pipeline pressure and leak detection method selected in the paper:
+PipeGuard is the software prototype for the paper *Enhancing IoT system for monitoring urban water availability* . It implements the pipeline pressure and leak detection method selected in the paper:
 
 - a digital twin of a district metered area (8 junctions, 8 pipes, 50 L/s at design demand) solved with the Hazen-Williams equation
 - simulated ESP32 edge nodes that sample pressure in deep sleep, wake on sharp changes and run a local fail-safe that closes a solenoid valve when the cloud link is down
