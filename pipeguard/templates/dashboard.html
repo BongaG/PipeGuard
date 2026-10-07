@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}PipeGuard, network view{% endblock %}
+{% block content %}
+<div class="grid">
+  <section class="panel schematic-panel">
+    <div class="panel-head">
+      <h1>Nongoma Ward-8</h1>
+      <p class="sub" id="zoneLine">Waiting for first readings</p>
+    </div>
+    <svg id="schematic" viewBox="0 20 800 470" role="img" aria-label="Pipeline network schematic"></svg>
+    <div class="legend">
+      <span><i class="dot ok"></i>Getting its full water</span>
+      <span><i class="dot warn"></i>Getting 60 to 95%</span>
+      <span><i class="dot danger"></i>Getting less than 60%</span>
+      <span><i class="valve-key"></i>Solenoid valve</span>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="panel" id="alertPanel">
+      <h2>Incident</h2>
+      <div id="alertBody" class="calm">No leak or burst detected. The model is comparing every sensor against the digital twin once a second.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Model reading</h2>
+      <div id="probaBars" class="bars"></div>
+      <dl class="kv">
+        <div><dt>Inlet flow</dt><dd id="inlet">-</dd></div>
+        <div><dt>Delivered to junctions</dt><dd id="metered">-</dd></div>
+        <div><dt>Unaccounted (lost) flow</dt><dd id="imbalance">-</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>Test scenarios</h2>
+      <div class="form-row">
+        <label for="pipeSel">Pipe</label>
+        <select id="pipeSel">{% for p in topology.pipes %}<option>{{ p.id }}</option>{% endfor %}</select>
+        <label for="nodeSel">Junction</label>
+        <select id="nodeSel">{% for j in topology.junctions %}<option>{{ j.id }}</option>{% endfor %}</select>
+        <label for="burstSel">Burst</label>
+        <select id="burstSel">{% for b in burst_percents %}<option value="{{ b }}" {% if loop.last %}selected{% endif %}>{{ b|round|int }}%</option>{% endfor %}</select>
+      </div>
+      <div class="btns">
+        <button data-scn="leak">Start leak</button>
+        <button data-scn="burst" class="danger">Start burst</button>
+        <button data-scn="demand_spike" class="ghost">Raise metered demand</button>
+      </div>
+      <p class="unit">A leak cuts {{ leak_percent|round|int }}% of the water to the junctions after the pipe. A burst cuts the chosen share at the junction and the ones after it.</p>
+      <div class="btns">
+        <button id="repairBtn" class="ghost">Repair all pipes</button>
+        <button id="linkBtn" class="ghost">Cut cloud link</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="panel wide">
+    <div class="panel-head row">
+      <h2>Junction readings</h2>
+      <div class="chart-controls">
+        <select id="chartMetric" aria-label="Reading for chart"><option value="received">Water received (L/s)</option><option value="pressure">Pressure against twin (kPa)</option></select>
+        <select id="chartNode" aria-label="Junction for chart"><option value="all">All junctions</option>{% for j in topology.junctions %}<option>{{ j.id }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <div class="chart-box"><canvas id="pressureChart"></canvas></div>
+  </section>
+
+  <section class="panel half">
+    <h2>Water sent and water delivered</h2>
+    <div class="chart-box short"><canvas id="flowChart"></canvas></div>
+  </section>
+
+  <section class="panel half">
+    <h2>Valves</h2>
+    <table class="valves" id="valveTable"><thead><tr><th>Pipe</th><th>Flow</th><th>State</th><th></th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="panel wide">
+    <h2>Event log</h2>
+    <ol id="log" class="log"></ol>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.TOPOLOGY = {{ topology|tojson }};</script>
+<script src="{{ url_for('static', filename='js/vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

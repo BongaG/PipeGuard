@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}PipeGuard{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('main.dashboard') }}">
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M2 16h9l3-7 4 14 3-7h9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <span>PipeGuard</span>
+  </a>
+  <nav>
+    <a href="{{ url_for('main.dashboard') }}" class="{{ 'on' if request.endpoint == 'main.dashboard' }}">Network</a>
+    <a href="{{ url_for('main.alerts') }}" class="{{ 'on' if request.endpoint == 'main.alerts' }}">Incidents</a>
+    <a href="{{ url_for('main.evaluation') }}" class="{{ 'on' if request.endpoint == 'main.evaluation' }}">Evaluation</a>
+  </nav>
+  <div class="status" id="linkStatus">Pipeline pressure and leak detection</div>
+</header>
+<main>{% block content %}{% endblock %}</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

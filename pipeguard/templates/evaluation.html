@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}PipeGuard, evaluation{% endblock %}
+{% block content %}
+<section class="panel wide page">
+  <h1>Offline evaluation</h1>
+  {% if not m %}
+  <p class="empty">No results yet. Run <code>python scripts/train.py</code> then <code>python scripts/evaluate.py</code> and refresh this page.</p>
+  {% else %}
+  {% if m.response %}
+  <h2>Leak detection</h2>
+  <table class="data">
+    <thead><tr><th>Scenario</th><th>Detected after</th><th>Valve closed after</th></tr></thead>
+    <tbody>
+      {% for r in m.response.summary if 'link down' not in r.group %}<tr><td>{{ r.group }}</td><td>{{ '%.1f s'|format(r.detection_median_s) }}</td><td>{{ '%.1f s'|format(r.valve_closed_median_s) }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <h2>Pressure at the affected junctions</h2>
+  <table class="data">
+    <thead><tr><th>Scenario</th><th>Normal</th><th>During leak or burst</th><th>After valve closed</th></tr></thead>
+    <tbody>
+      {% for r in m.response.summary if 'link down' not in r.group %}<tr><td>{{ r.group }}</td><td>{{ '%.0f kPa'|format(r.before_kpa) }}</td><td>{{ '%.0f kPa'|format([r.lowest_kpa, 0]|max) }}</td><td>{{ '%.0f kPa'|format([r.after_close_kpa, 0]|max) }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <p class="sub">Medians over {{ m.response.repeats }} runs on every pipe or junction, timed from the moment the leak or burst starts. After the valve closes, the affected junctions are cut off, so they read 0 kPa.</p>
+  <h2>Model accuracy</h2>
+  {% endif %}
+  <p class="sub">{{ m.test_episodes }} unseen simulated episodes, {{ "{:,}".format(m.test_windows) }} one-second windows.</p>
+  <table class="data">
+    <thead><tr><th>Detector</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>False positive rate</th></tr></thead>
+    <tbody>
+      {% for name, label in [('xgb', 'XGBoost'), ('mlp', 'MLP')] %}
+      {% set b = m.window_level[name].binary %}
+      <tr><td>{{ label }}</td><td>{{ '%.2f%%'|format(b.accuracy*100) }}</td><td>{{ '%.2f%%'|format(b.precision*100) }}</td><td>{{ '%.2f%%'|format(b.recall*100) }}</td><td>{{ '%.2f%%'|format(b.f1*100) }}</td><td>{{ '%.2f%%'|format(b.false_positive_rate*100) }}</td></tr>
+      {% endfor %}
+      {% set s = m.static_threshold %}
+      <tr><td>Static threshold</td><td>{{ '%.2f%%'|format(s.accuracy*100) }}</td><td>{{ '%.2f%%'|format(s.precision*100) }}</td><td>{{ '%.2f%%'|format(s.recall*100) }}</td><td>{{ '%.2f%%'|format(s.f1*100) }}</td><td>{{ '%.2f%%'|format(s.false_positive_rate*100) }}</td></tr>
+    </tbody>
+  </table>
+  <dl class="kv wide-kv">
+    <div><dt>Leak alert, median</dt><dd>{{ '%.1f s'|format(m.streaming.latency.leak.total_median_s) }}</dd></div>
+    <div><dt>Burst alert, median</dt><dd>{{ '%.1f s'|format(m.streaming.latency.burst.total_median_s) }}</dd></div>
+    <div><dt>Pipe located, 10 s after alarm</dt><dd>{{ '%.1f%%'|format(m.streaming.localisation_after_10s*100) }}</dd></div>
+    <div><dt>Offline valve closure, median</dt><dd>{{ '%.1f s'|format(m.failsafe.time_to_close_median_s) }}</dd></div>
+    <div><dt>Edge node battery life</dt><dd>{{ '%.0f days'|format(m.energy.battery_days_duty_cycled) }}</dd></div>
+    <div><dt>Inference per window</dt><dd>{{ '%.2f ms'|format(m.inference_ms) }}</dd></div>
+  </dl>
+  <div class="figs">
+    {% for f in figures %}<figure><img src="{{ url_for('main.result_file', name=f) }}" alt="{{ f }}"><figcaption>{{ f }}</figcaption></figure>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

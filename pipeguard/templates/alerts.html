@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}PipeGuard, incidents{% endblock %}
+{% block content %}
+<section class="panel wide page">
+  <h1>Incidents</h1>
+  {% if alerts %}
+  <table class="data">
+    <thead><tr><th>#</th><th>Opened</th><th>Type</th><th>Pipe</th><th>Pipe confidence</th><th>Detected by</th><th>Time to detect</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for a in alerts %}
+      <tr class="{{ a.status }}">
+        <td>{{ a.id }}</td>
+        <td class="ts" data-ts="{{ a.opened_at }}"></td>
+        <td><span class="tag {{ a.kind }}">{{ a.kind }}</span></td>
+        <td>{{ a.pipe or '-' }}</td>
+        <td>{{ '%.0f%%'|format(a.pipe_confidence * 100) if a.pipe_confidence else '-' }}</td>
+        <td>{{ a.detected_by }}</td>
+        <td>{{ '%.0f s'|format(a.latency_s) if a.latency_s is not none else '-' }}</td>
+        <td>{{ a.status }}</td>
+        <td>{% if a.status == 'open' %}<button class="ghost small" data-resolve="{{ a.id }}">Mark resolved</button>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No incidents yet. Start a leak or burst from the network view to see one recorded here.</p>
+  {% endif %}
+
+  <h2 class="gap">Valve actions</h2>
+  {% if valves %}
+  <table class="data">
+    <thead><tr><th>Time</th><th>Pipe</th><th>Action</th><th>By</th></tr></thead>
+    <tbody>{% for v in valves %}<tr><td class="ts" data-ts="{{ v.ts }}"></td><td>{{ v.pipe }}</td><td>{{ v.action }}</td><td>{{ v.actor }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}
+  <p class="empty">No valve has been operated yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.ts').forEach(el => { el.textContent = new Date(parseFloat(el.dataset.ts) * 1000).toLocaleString(); });
+document.querySelectorAll('[data-resolve]').forEach(b => b.addEventListener('click', async () => {
+  await fetch(`/api/alerts/${b.dataset.resolve}/resolve`, {method: 'POST'});
+  location.reload();
+}));
+</script>
+{% endblock %}
